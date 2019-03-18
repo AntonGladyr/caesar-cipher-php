@@ -2,34 +2,52 @@
 
 <?php
 
-function Cipher($ch, $key)
+const KEY           = 3;
+const KEY_WORD      = 'Complete Victory';
+const ALPHABET_SIZE = 26;
+
+function Cipher($ch, $sourceAlphas, $keyedAlphas)
 {
 	if (!ctype_alpha($ch))
 		return $ch;
 
-	$offset = ord(ctype_upper($ch) ? 'A' : 'a');
-	return chr(fmod(((ord($ch) + $key) - $offset), 26) + $offset);
+  return $keyedAlphas[array_search(strtoupper($ch), $sourceAlphas)];
 }
 
-function Encipher($input, $key)
+function Encipher($input, $sourceAlphas, $keyedAlphas)
 {
 	$output = "";
 
 	$inputArr = str_split($input);
 	foreach ($inputArr as $ch)
-		$output .= Cipher($ch, $key);
+    $output .= Cipher(strtoupper($ch), $sourceAlphas, $keyedAlphas);
 
 	return $output;
 }
 
-function Decipher($input, $key)
+function Decipher($input, $sourceAlphas, $keyedAlphas)
 {
-	return Encipher($input, 26 - $key);
+	return Encipher($input, $sourceAlphas, $keyedAlphas);
 }
 
-$text = "The quick brown fox jumps over the lazy dog";
-$cipherText = Encipher($text, 3);
-$plainText = Decipher($cipherText, 3);
+$concatedKey = str_replace(' ', '', KEY_WORD);
+$key = array_unique(str_split(strtoupper($concatedKey)));
+$alphas = range('A', 'Z');
+$keyedAlphas = array_unique(array_merge($key, $alphas));
+for ($i = 0; $i < KEY; $i++)
+{
+  array_unshift($keyedAlphas, end($keyedAlphas));
+  array_pop($keyedAlphas);
+}
 
-echo $cipherText . "\r\n";
-echo $plainText . "\r\n";
+
+$filePath = isset($argv[1]) ? $argv[1] : './plaintext.txt';
+$myfile = fopen($filePath, "r") or die("Unable to open file with plain text!");
+$text = fread($myfile,filesize($filePath));
+fclose($myfile);
+
+$cipherText = Encipher($text, range('A', 'Z'), $keyedAlphas);
+$plainText = Decipher($cipherText, $keyedAlphas, range('A', 'Z'));
+
+echo "Ciphered text: " . $cipherText . "\r\n";
+echo "Deciphered text: " . $plainText . "\r\n";
